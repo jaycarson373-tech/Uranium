@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Uranium Strategy logo</title>
+  <desc id="desc">Acid green uranium reserve mark on a dark field.</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="66%">
+      <stop offset="0" stop-color="#182210"/>
+      <stop offset="1" stop-color="#070907"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+  <path d="M128 512h768M512 128v768" stroke="#d9ff44" stroke-opacity=".08" stroke-width="2"/>
+  <circle cx="512" cy="512" r="322" fill="none" stroke="#d9ff44" stroke-opacity=".25" stroke-width="4"/>
+  <circle cx="512" cy="512" r="276" fill="#090c08" stroke="#d9ff44" stroke-width="10"/>
+  <g fill="#d9ff44" filter="url(#glow)">
+    <circle cx="512" cy="512" r="70"/>
+    <path d="M512 242c91 0 172 45 221 113L599 460a112 112 0 0 0-87-42Z"/>
+    <path d="M746 647c-46 80-128 129-216 135l-25-168a112 112 0 0 0 79-46Z"/>
+    <path d="M278 647c-46-80-48-174-13-251l159 62a112 112 0 0 0 7 91Z"/>
+  </g>
+  <text x="512" y="932" fill="#efff91" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="60" font-weight="800" letter-spacing="24">USR</text>
+</svg>

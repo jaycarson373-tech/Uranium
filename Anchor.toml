@@ -1,0 +1,18 @@
+[toolchain]
+anchor_version = "1.1.2"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+uranium_strategy = "33FayKPVmoNGUxbT8o2tbandYRegiuaj2xP1Xky6ZwRa"
+
+[programs.devnet]
+uranium_strategy = "33FayKPVmoNGUxbT8o2tbandYRegiuaj2xP1Xky6ZwRa"
+
+[provider]
+cluster = "devnet"
+
+[scripts]
+test-unit = "cargo test -p uranium-strategy --lib"

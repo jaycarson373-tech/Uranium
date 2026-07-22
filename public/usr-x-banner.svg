@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 500" role="img" aria-labelledby="title desc">
+  <title id="title">Uranium Strategy X banner</title>
+  <desc id="desc">Dark uranium mine landscape with acid-green Uranium Strategy branding.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#050705"/>
+      <stop offset="1" stop-color="#131a0f"/>
+    </linearGradient>
+    <radialGradient id="haze" cx="68%" cy="72%" r="58%">
+      <stop offset="0" stop-color="#baff3c" stop-opacity=".34"/>
+      <stop offset=".46" stop-color="#8bd520" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#070907" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#d9ff44" stroke-opacity=".09"/>
+    </pattern>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="10"/></filter>
+  </defs>
+  <rect width="1500" height="500" fill="url(#sky)"/>
+  <rect width="1500" height="500" fill="url(#haze)"/>
+  <path d="M0 380 150 320 290 355 430 270 570 340 720 245 880 330 1030 265 1180 338 1340 280 1500 325V500H0Z" fill="#080b07"/>
+  <path d="M0 412 220 352 380 420 610 326 800 410 1040 340 1220 400 1500 338V500H0Z" fill="#10160d"/>
+  <path d="M0 500V356H1500V500Z" fill="url(#grid)" transform="skewY(-3)"/>
+  <g transform="translate(110 92)">
+    <rect width="190" height="190" rx="44" fill="#080b07" stroke="#d9ff44" stroke-width="3"/>
+    <circle cx="95" cy="95" r="24" fill="#d9ff44"/>
+    <g fill="#d9ff44">
+      <path d="M95 24a71 71 0 0 1 56 27l-36 32a29 29 0 0 0-20-9Z"/>
+      <path d="M157 130a71 71 0 0 1-53 36l-7-42a29 29 0 0 0 19-11Z"/>
+      <path d="M33 130a71 71 0 0 1 9-61l39 20a29 29 0 0 0 1 22Z"/>
+    </g>
+  </g>
+  <g transform="translate(350 130)">
+    <text x="0" y="0" fill="#d9ff44" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="800" letter-spacing="9">USR / SOLANA</text>
+    <text x="0" y="78" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="850" letter-spacing="-3">URANIUM STRATEGY</text>
+    <text x="2" y="128" fill="#efff91" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="700" letter-spacing="5">BURN TO BUILD. MINE THE RESERVE.</text>
+    <rect x="2" y="157" width="490" height="3" fill="#d9ff44"/>
+    <text x="2" y="194" fill="#b8c4a7" font-family="Arial, Helvetica, sans-serif" font-size="17" letter-spacing="3">25 CELLS · FINITE EMISSIONS · ON-CHAIN POWER</text>
+  </g>
+  <circle cx="1290" cy="160" r="86" fill="#d9ff44" opacity=".07" filter="url(#glow)"/>
+  <text x="1385" y="454" fill="#d9ff44" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" letter-spacing="4">DEVNET / PRE-LAUNCH</text>
+</svg>
