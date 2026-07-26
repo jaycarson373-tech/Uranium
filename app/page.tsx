@@ -14,7 +14,7 @@ const USR_MINT = process.env.NEXT_PUBLIC_USR_MINT ?? "";
 const GRID = Array.from({ length: 25 }, (_, index) => index);
 
 const stats = [
-  ["92M", "proposed max supply"],
+  ["92M", "fixed max supply"],
   ["25", "on-chain grid cells"],
   ["2%", "claim burn"],
   ["0.75%", "compound fee"],
@@ -85,22 +85,46 @@ function WalletControl({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function HydrationSafeWallet({ compact = false }: { compact?: boolean }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  const placeholder = (
+    <button
+      className={compact ? "wallet-button compact" : "panel-wallet-placeholder"}
+      type="button"
+      disabled
+    >
+      Connect wallet
+    </button>
+  );
+
+  if (!mounted) return placeholder;
+
+  return (
+    <WalletReadyGate fallback={placeholder}>
+      <WalletControl compact={compact} />
+    </WalletReadyGate>
+  );
+}
+
 function ProtocolConsole() {
   const connected = useConnectedWallet();
   const [selectedSlot, setSelectedSlot] = useState(12);
   const contractConfigured = Boolean(PROGRAM_ID && USR_MINT);
   const stateLabel = !connected
-    ? "Connect a Solana wallet to prepare your miner account"
+    ? "Connect a Solana wallet to view your reserve"
     : !contractConfigured
-      ? "Program tested locally · devnet deployment approval required"
-      : "Devnet configuration detected · instruction client pending activation";
+      ? "Protocol configuration unavailable"
+      : "Program connected · wallet actions activate at launch";
 
   return (
     <div className="protocol-console">
       <div className="console-status">
         <span className={`status-light ${connected ? "ready" : ""}`} />
         <div>
-          <small>Solana devnet / pre-launch</small>
+          <small>Solana protocol / beta</small>
           <strong>{stateLabel}</strong>
         </div>
       </div>
@@ -136,7 +160,7 @@ function ProtocolConsole() {
               Build amount
               <span><input value="1,000" readOnly aria-label="Build amount" /> USR</span>
             </label>
-            <button type="button" disabled>Deploy after devnet approval</button>
+            <button type="button" disabled>On-chain actions activate at launch</button>
           </div>
           <div className="action-row">
             <button type="button" disabled><small>Net to wallet</small>Claim rewards</button>
@@ -146,11 +170,9 @@ function ProtocolConsole() {
       </div>
 
       <div className="transaction-note">
-        No transaction will be created until the program ID and USR mint are deployed and shown for approval. No private key is stored by this site.
+        Transactions require a connected wallet and launch activation. This site never stores private keys or seed phrases.
       </div>
-      <WalletReadyGate fallback={<button className="panel-wallet-placeholder" disabled>Checking wallets…</button>}>
-        <WalletControl />
-      </WalletReadyGate>
+      <HydrationSafeWallet />
     </div>
   );
 }
@@ -160,7 +182,7 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [panel, setPanel] = useState<Panel>(null);
   const reserveLabel = useMemo(
-    () => PROGRAM_ID ? shortAddress(PROGRAM_ID) : "Devnet deploy pending",
+    () => PROGRAM_ID ? shortAddress(PROGRAM_ID) : "Program unavailable",
     [],
   );
 
@@ -214,11 +236,9 @@ export default function Home() {
           <button className="icon-button" type="button" aria-label={muted ? "Enable sound effects" : "Mute sound effects"} aria-pressed={muted} onClick={() => setMuted((value) => !value)}>
             <span aria-hidden="true">{muted ? "×" : "♪"}</span>
           </button>
-          <span className="live-badge"><i /> Solana · Devnet</span>
+          <span className="live-badge"><i /> Solana · Beta</span>
           <button className="about-button" type="button" onClick={() => setPanel("about")}>Protocol</button>
-          <WalletReadyGate fallback={<button className="wallet-button compact" disabled>Checking…</button>}>
-            <WalletControl compact />
-          </WalletReadyGate>
+          <HydrationSafeWallet compact />
         </nav>
       </header>
 
@@ -232,10 +252,10 @@ export default function Home() {
           <button className="hero-button" type="button" onClick={() => setPanel("console")}>
             <span className="button-sweep" aria-hidden="true" />
             <span aria-hidden="true">☢</span>
-            Open Devnet Console
+            Open Protocol Console
             <span aria-hidden="true">→</span>
           </button>
-          <span className="deploy-hint">Real wallet connection · contract deployment gated</span>
+          <span className="deploy-hint">Wallet-native strategy · verifiable on-chain</span>
           <button className="reserve-id" type="button" disabled={!PROGRAM_ID} onClick={copyProgramId} aria-label="Copy Uranium Strategy program ID">
             <span>PROGRAM</span><strong>{copied ? "Copied to clipboard" : reserveLabel}</strong>
             <span aria-hidden="true">{copied ? "✓" : PROGRAM_ID ? "⧉" : "○"}</span>
@@ -243,7 +263,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="stats" aria-label="Proposed protocol statistics">
+      <section className="stats" aria-label="Protocol statistics">
         {stats.map(([value, label]) => (
           <div className="stat-card" key={label}><strong>{value}</strong><span>{label}</span></div>
         ))}
@@ -256,7 +276,7 @@ export default function Home() {
           <button className="close-button" type="button" onClick={() => setPanel(null)} aria-label="Close panel">×</button>
           {panel === "console" ? (
             <>
-              <div className="panel-kicker">Protocol console / devnet</div>
+              <div className="panel-kicker">Protocol console / Solana beta</div>
               <h2 id="panel-title">Build your<br /><span>reserve.</span></h2>
               <ProtocolConsole />
             </>
@@ -283,9 +303,9 @@ export default function Home() {
                 </article>
               </div>
               <div className="phase-note">
-                <strong>Phase 2, not day one:</strong> a separate regulated RWA adapter could route part of protocol revenue toward eligible uranium-linked assets. It is intentionally outside the core token contract.
+                <strong>Future RWA expansion:</strong> a separate regulated adapter could route part of protocol revenue toward eligible uranium-linked assets. It remains outside the core token contract.
               </div>
-              <button className="panel-cta" type="button" onClick={() => setPanel("console")}>Open devnet console <span aria-hidden="true">→</span></button>
+              <button className="panel-cta" type="button" onClick={() => setPanel("console")}>Open protocol console <span aria-hidden="true">→</span></button>
             </>
           )}
         </section>
