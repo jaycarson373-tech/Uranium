@@ -1,13 +1,7 @@
 "use client";
 
-import {
-  WalletReadyGate,
-  useConnect,
-  useConnectedWallet,
-  useDisconnect,
-  useWallets,
-} from "@solana/kit-plugin-wallet/react";
 import { useEffect, useMemo, useState } from "react";
+import WalletIsland from "./wallet-island";
 
 const PROGRAM_ID = process.env.NEXT_PUBLIC_USR_PROGRAM_ID ?? "";
 const USR_MINT = process.env.NEXT_PUBLIC_USR_MINT ?? "";
@@ -26,108 +20,13 @@ function shortAddress(value: string) {
   return `${value.slice(0, 4)}…${value.slice(-4)}`;
 }
 
-function WalletControl({ compact = false }: { compact?: boolean }) {
-  const wallets = useWallets();
-  const connected = useConnectedWallet();
-  const { dispatch: connect, isRunning: connecting } = useConnect();
-  const { dispatch: disconnect, isRunning: disconnecting } = useDisconnect();
-  const [pickerOpen, setPickerOpen] = useState(false);
-
-  if (connected) {
-    return (
-      <button
-        className={`wallet-button connected ${compact ? "compact" : ""}`}
-        type="button"
-        disabled={disconnecting}
-        onClick={() => disconnect()}
-        title="Disconnect wallet"
-      >
-        <span className="wallet-glyph" aria-hidden="true">▰</span>
-        {disconnecting ? "Disconnecting" : shortAddress(connected.account.address)}
-      </button>
-    );
-  }
-
-  if (wallets.length === 0) {
-    return (
-      <a className="wallet-button wallet-link" href="https://phantom.com/" target="_blank" rel="noreferrer">
-        Install wallet
-      </a>
-    );
-  }
-
-  return (
-    <div className="wallet-picker">
-      <button
-        className={`wallet-button ${compact ? "compact" : ""}`}
-        type="button"
-        disabled={connecting}
-        aria-expanded={pickerOpen}
-        onClick={() => wallets.length === 1 ? connect(wallets[0]) : setPickerOpen((value) => !value)}
-      >
-        <span className="wallet-glyph" aria-hidden="true">▰</span>
-        {connecting ? "Connecting" : "Connect wallet"}
-      </button>
-      {pickerOpen && (
-        <div className="wallet-menu" role="menu">
-          {wallets.map((wallet) => (
-            <button key={wallet.name} type="button" role="menuitem" onClick={() => {
-              setPickerOpen(false);
-              connect(wallet);
-            }}>
-              <span className="wallet-menu-dot" aria-hidden="true" />
-              {wallet.name}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function HydrationSafeWallet({ compact = false }: { compact?: boolean }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-
-  const placeholder = (
-    <button
-      className={compact ? "wallet-button compact" : "panel-wallet-placeholder"}
-      type="button"
-      disabled
-    >
-      Connect wallet
-    </button>
-  );
-
-  if (!mounted) return placeholder;
-
-  return (
-    <WalletReadyGate fallback={placeholder}>
-      <WalletControl compact={compact} />
-    </WalletReadyGate>
-  );
-}
-
 function ProtocolConsole() {
-  const connected = useConnectedWallet();
   const [selectedSlot, setSelectedSlot] = useState(12);
   const contractConfigured = Boolean(PROGRAM_ID && USR_MINT);
-  const stateLabel = !connected
-    ? "Connect a Solana wallet to view your reserve"
-    : !contractConfigured
-      ? "Protocol configuration unavailable"
-      : "Program connected · wallet actions activate at launch";
 
   return (
     <div className="protocol-console">
-      <div className="console-status">
-        <span className={`status-light ${connected ? "ready" : ""}`} />
-        <div>
-          <small>Solana protocol / beta</small>
-          <strong>{stateLabel}</strong>
-        </div>
-      </div>
+      <WalletIsland variant="panel" contractConfigured={contractConfigured} />
 
       <div className="console-layout">
         <div className="reserve-map">
@@ -172,7 +71,6 @@ function ProtocolConsole() {
       <div className="transaction-note">
         Transactions require a connected wallet and launch activation. This site never stores private keys or seed phrases.
       </div>
-      <HydrationSafeWallet />
     </div>
   );
 }
@@ -238,7 +136,7 @@ export default function Home() {
           </button>
           <span className="live-badge"><i /> Solana · Beta</span>
           <button className="about-button" type="button" onClick={() => setPanel("about")}>Protocol</button>
-          <HydrationSafeWallet compact />
+          <WalletIsland variant="compact" />
         </nav>
       </header>
 

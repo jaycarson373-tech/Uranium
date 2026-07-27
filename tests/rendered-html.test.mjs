@@ -53,3 +53,21 @@ test("keeps transactions gated while supporting a cluster cutover", async () => 
   assert.doesNotMatch(page, /Robinhood Chain/);
   assert.match(protocol, /No deployment or token transaction should occur/);
 });
+
+test("keeps wallet startup isolated from the landing page", async () => {
+  const [layout, page, island, runtime] = await Promise.all([
+    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/wallet-island.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/wallet-runtime.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.doesNotMatch(layout, /<Providers>/);
+  assert.doesNotMatch(page, /@solana\/kit-plugin-wallet/);
+  assert.match(page, /<WalletIsland variant="compact"/);
+  assert.match(island, /lazy\(\(\) => import\("\.\/wallet-runtime"\)\)/);
+  assert.match(island, /WalletErrorBoundary/);
+  assert.match(island, /if \(!mounted\)/);
+  assert.match(runtime, /<Providers>/);
+  assert.match(runtime, /WalletReadyGate/);
+});
