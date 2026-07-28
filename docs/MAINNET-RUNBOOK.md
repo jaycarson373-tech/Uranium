@@ -87,6 +87,34 @@ Squads vault transaction. Before member approval, show:
 Require two Squads approvals. After execution, run the state verifier configured
 for mainnet and confirm that mint and freeze authorities are `None`.
 
+## Token access and liquidity
+
+The approved fixed-supply bootstrap creates the mint as a PDA of the Uranium
+Strategy program. It is not a Pump.fun mint. Do not advertise or attempt a
+Pump.fun launch for this mint.
+
+Players need USR before they can build. The mainnet launch plan therefore needs
+a separately reviewed DEX liquidity transaction using part of the 27,600,000
+USR treasury allocation and a disclosed amount of SOL or stablecoin. Before
+that transaction, publish:
+
+- venue and pool address;
+- exact USR and quote-token amounts;
+- initial price implied by those amounts;
+- LP position owner and withdrawal policy;
+- whether fees accrue to the Squads treasury;
+- treasury tokens retained for operations, incentives, or later liquidity.
+
+The game program never receives the SOL used in a DEX purchase. During gameplay,
+the only SOL paid is Solana network fees and one-time account rent. Build burns
+USR; claim transfers USR; compound burns vault USR.
+
+The alternative `initialize_protocol` instruction can bind an existing,
+authority-revoked classic SPL mint, but it begins with an empty reward reserve.
+Using a third-party fair-launch mint would require acquiring and depositing the
+entire intended reserve and redesigning the approved distribution. That path is
+not approved by this runbook.
+
 ## Staged activation
 
 1. Keep the website on Devnet while mainnet state is verified.
