@@ -4,8 +4,7 @@ import {
   Component,
   lazy,
   Suspense,
-  useEffect,
-  useState,
+  useSyncExternalStore,
   type ErrorInfo,
   type ReactNode,
 } from "react";
@@ -76,9 +75,11 @@ class WalletErrorBoundary extends Component<
 }
 
 export default function WalletIsland(props: WalletIslandProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  const mounted = useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false,
+  );
 
   if (!mounted) {
     return <WalletPlaceholder {...props} />;

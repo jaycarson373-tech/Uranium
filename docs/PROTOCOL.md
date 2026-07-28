@@ -27,7 +27,7 @@ There is no simulated balance, off-chain ownership ledger, random winner, SOL wa
 - Claiming transfers the net reward and burns the configured claim fee from the vault.
 - Compounding burns the consumed vault rewards and converts the productive portion into mining power.
 
-Approved devnet values are 92,000,000 USR max supply, 50 USR/second base emission, seven-day halvings, 1,000 USR per power, a 2% claim fee, and a 0.75% compound fee. The season-end timestamp is chosen at bootstrap so the 90-day campaign begins at the actual deployment time.
+Deployed Devnet values are 92,000,000 USR max supply, 50 USR/second base emission, seven-day halvings, 1,000 USR per power, a 2% claim fee, and a 0.75% compound fee. The deployed season ends at Unix timestamp `1792782286`.
 
 ## Reward accounting
 
@@ -39,31 +39,53 @@ This makes the reward liability bounded by `reserve_funded`. The program never m
 
 The launch authority may fund the reserve and pause/unpause new miner initialization, building, and compounding. Claiming remains available while paused. There is no admin function to withdraw the reward vault.
 
-Before mainnet, authority should move to a reviewed multisig and the upgrade authority should follow an explicitly published policy. Making the program immutable is a later governance decision, not an automatic step.
+Mainnet must initialize with a reviewed Squads vault as launch authority, and
+the program upgrade authority must be transferred to that vault before token
+bootstrap. Making the program immutable is a later governance decision, not an
+automatic step.
 
 ## RWA boundary
 
 Uranium-linked stocks or tokenized securities are intentionally outside the v1 token program. Availability varies by issuer and jurisdiction, and tokenized stock products may be derivatives rather than ownership of the underlying share. If added, use a separate reviewed adapter funded by defined protocol revenue; never represent USR emissions as uranium equity or commodity ownership.
 
-## Deployment gate
+## Verified Devnet state
 
-No deployment or token transaction should occur until the operator sees and approves:
+- Program: `4ZssVwZYsfPAdoWozYyxPHFYts5uohJBHWCQo6yEm5AC`
+- Mint: `6cBq44LrxdqWyZrPyvkydQ32hGPhYvErtt66eyM4KVEg`
+- Config: `24P7GQNwrNQnNojxipxAYR8nmBi3ZKWHoRB8zoetWX5A`
+- Reward vault: `1djxzK9KKKbfUpNSVDww3zFQqueEjCPLjrCkbU1V5X3`
+- Bootstrap transaction:
+  `4wVvZDTUVBC2CagKppK4XsYgg3XrWofo1E3HoPoPkQd9ggKxvmyVyQE59Wd6KbPFuSZ7mCPukp9rZqYiCfNbgHLh`
 
-- cluster (`devnet` for the first run);
-- generated program address and final program binary hash;
-- token name/symbol/decimals and exact fixed supply;
-- supply allocation and reward-vault funding amount;
-- emission rate, halving interval, season end, build cost, and fees;
-- fee-payer address and estimated devnet SOL cost;
-- all authority revocations and remaining authorities.
+`npm run verify:devnet-state` independently checks the transaction, account
+layout, allocation, token program, revoked authorities, vault owner, and config.
+`npm run verify:devnet-gameplay` simulates initialize-miner plus build without
+broadcasting. `npm run test:surfpool` executes build, claim, compound, rejection,
+and contention paths against an isolated Devnet fork.
 
-The source and direct SBF-target release build compile locally. Solana CLI 3.1.14's packaged `cargo build-sbf` post-processor has an empty syscall allowlist on this machine, so deployment moves to the user's wallet-controlled Solana Playground workspace. The exact final binary must be built there and every deployment/bootstrap instruction simulated before signature.
+## Transaction approval
 
-After approval: deploy the program, then execute the atomic bootstrap that creates/mints USR, revokes mint/freeze authority, initializes the protocol, and funds the reserve. Simulate each user instruction before activating frontend transaction controls.
+The website uses a two-stage action. First it displays cluster, action, token
+effect, selected cell, fee payer, program, and the fact that the wallet will
+show the network fee. Only the separate “Approve in wallet” action requests a
+signature. Rejected or failed transactions do not update optimistic balances;
+the site refreshes confirmed chain state.
+
+## Throughput boundary
+
+V1 intentionally keeps aggregate reward accounting in one writable config
+account. A local Devnet-fork test has passed 100 concurrent submissions, but
+this does not remove Solana account-lock contention during a public traffic
+spike. Launch monitoring must track transaction failure rate and confirmation
+latency. Do not promise unbounded throughput. A future audited version can
+introduce reward shards if real mainnet measurements justify the added
+accounting complexity.
 
 ## Pre-mainnet requirements
 
 - Independent Anchor/Solana security audit.
+- Independent review of client-generated account metas and all program
+  instructions.
 - Property and integration tests covering many miners, rounding dust, empty vaults, pause behavior, time boundaries, and account substitution attacks.
 - Economic stress tests for concentration, reflexivity, late entrants, reserve exhaustion, and liquidity shocks.
 - Legal review for token distribution, marketing claims, buyback mechanics, and any RWA integration.

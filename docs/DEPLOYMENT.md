@@ -1,41 +1,77 @@
 # Deployment handoff
 
-## Current boundary
+## Current state
 
-The program source and web application are prepared, but no program or token exists on devnet yet. This machine has no default Solana signer. Program deployment must therefore begin inside a user-controlled wallet environment such as Solana Playground. Never send a keypair, seed phrase or service-role secret through chat.
-
-## Devnet sequence
-
-1. Import the `programs/uranium_strategy` source into Solana Playground.
-2. Let Playground assign the program address inside its wallet-controlled workspace.
-3. Replace the compile-only `declare_id!` and both `Anchor.toml` entries with that public address.
-4. Build in Playground and inspect the final program address and authority.
-5. Before deployment, display and approve: devnet cluster, wallet fee payer, loader/program destination, estimated devnet SOL, program address and upgrade authority.
-6. Simulate, then deploy from the connected wallet.
-7. Set `NEXT_PUBLIC_USR_PROGRAM_ID` to the confirmed address.
-8. Derive the authority-specific `config` and `usr-mint` PDAs, then prepare the `bootstrap_devnet` transaction.
-9. Display and approve the bootstrap summary. Simulate before requesting the wallet signature.
-10. Verify: 92M supply, 64.4M reward vault, 27.6M authority treasury, six decimals, and both mint/freeze authorities set to none.
-11. Run one smoke path: initialize miner → burn 1,000 USR → wait → claim → build again → compound.
-
-Passing devnet demonstrates runtime compatibility and transaction wiring. It does not guarantee mainnet safety. Before mainnet, repeat simulation against the final binary, obtain an independent audit, move authorities to a multisig, test economic edge cases and complete legal review.
+The Devnet program and fixed-supply token are deployed and verified. The
+frontend supports real wallet transactions. Mainnet is intentionally a separate
+deployment and must never reuse the Devnet program address.
 
 ## Vercel
 
-Use `.env.vercel.example`. Only `NEXT_PUBLIC_*` values belong in the frontend. Never add `SUPABASE_SERVICE_ROLE_KEY` to Vercel.
+Copy the public values from `.env.vercel.example`. The four Devnet program
+addresses in that file are already verified. Add
+`NEXT_PUBLIC_INDEXER_API_URL` only after Railway returns its HTTPS domain.
 
-## Railway
-
-Deploy this repository with `railway.toml` and the variables in `.env.railway.example`. The Railway process is read-only with respect to Solana: it polls confirmed program logs, decodes known Anchor events and writes indexed projections using the Supabase service role. It never holds a Solana signing key.
+Only `NEXT_PUBLIC_*` values belong in Vercel. Never put
+`SUPABASE_SERVICE_ROLE_KEY`, wallet material, or a private RPC administration
+key in browser variables.
 
 ## Supabase
 
-Run `supabase/migrations/202607220001_uranium_strategy.sql` once in the SQL editor. Public clients receive read-only access to the protocol, miner, rig and event tables. Only the Railway service role can invoke the ingestion function or update the indexer cursor.
+Create a Devnet project and run this once in the SQL editor:
 
-## Production replacements
+`supabase/migrations/202607220001_uranium_strategy.sql`
 
-- Replace the public devnet RPC with a paid RPC before traffic grows.
-- Use separate Supabase projects for devnet and mainnet.
-- Change every cluster/address variable together; never combine a mainnet RPC with devnet program IDs.
-- Set Railway `ALLOWED_ORIGIN` to the final Vercel/Sites domain.
-- Keep mainnet disabled in the UI until a second explicit deployment approval.
+The migration creates protocol, miner, rig, event, and cursor tables; a public
+read-only leaderboard; row-level security; idempotent event ingestion; and a
+service-role-only cursor function.
+
+Use a different Supabase project for mainnet. Do not copy the Devnet cursor or
+indexed events into the mainnet database.
+
+## Railway
+
+Deploy this repository as a service. Railway uses `railway.toml` and starts
+`npm run start:indexer`.
+
+Set every value in `.env.railway.example`:
+
+- `SOLANA_CLUSTER`
+- `SOLANA_RPC_HTTP_URL`
+- `SOLANA_RPC_FALLBACK_URL` (strongly recommended; use another provider)
+- `USR_PROGRAM_ID`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `INDEXER_NAME`
+- `INDEXER_POLL_INTERVAL_MS`
+- `INDEXER_BOOTSTRAP_LIMIT`
+- `ALLOWED_ORIGIN`
+
+Railway injects `PORT`. The indexer has no wallet and no signing capability.
+After deployment, `/health` must return HTTP 200 and an advancing `rpcSlot`.
+Then set the Railway domain as Vercel's
+`NEXT_PUBLIC_INDEXER_API_URL` and redeploy the frontend.
+
+## Production checks
+
+1. `npm run build:vercel`
+2. `npm test`
+3. `npm run test:indexer`
+4. `npm run verify:devnet-state`
+5. `npm run verify:devnet-gameplay`
+6. `NO_DNA=1 cargo test -p uranium-strategy --lib`
+7. `NO_DNA=1 anchor build`
+8. Fork Devnet in Surfpool and run `npm run test:surfpool`
+9. Load the deployed site twice in a clean browser session; open/close the
+   protocol console; connect/disconnect a wallet; confirm there is no reload
+   loop.
+10. Review one build transaction in the site and reject it in the wallet. No
+    transaction should be sent.
+
+## Cluster cutover rule
+
+Change the RPC, cluster, program, mint, config, reward vault, indexer URL, and
+database together. A deployment must fail review if any Devnet address is
+paired with `mainnet-beta`.
+
+Mainnet instructions are in [MAINNET-RUNBOOK.md](MAINNET-RUNBOOK.md).

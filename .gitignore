@@ -33,6 +33,7 @@ yarn-error.log*
 !.env.example
 !.env.vercel.example
 !.env.railway.example
+!.env.mainnet.example
 
 # vercel
 .vercel
@@ -42,6 +43,7 @@ next-env.d.ts
 *.tsbuildinfo
 /dist/
 /target/
+/.anchor/
 /.wrangler/
 /outputs/
 /work/

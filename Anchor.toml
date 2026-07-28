@@ -6,13 +6,14 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-uranium_strategy = "33FayKPVmoNGUxbT8o2tbandYRegiuaj2xP1Xky6ZwRa"
+uranium_strategy = "4ZssVwZYsfPAdoWozYyxPHFYts5uohJBHWCQo6yEm5AC"
 
 [programs.devnet]
-uranium_strategy = "33FayKPVmoNGUxbT8o2tbandYRegiuaj2xP1Xky6ZwRa"
+uranium_strategy = "4ZssVwZYsfPAdoWozYyxPHFYts5uohJBHWCQo6yEm5AC"
 
 [provider]
 cluster = "devnet"
+wallet = ".anchor/operator.json"
 
 [scripts]
 test-unit = "cargo test -p uranium-strategy --lib"

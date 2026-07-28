@@ -15,7 +15,10 @@ if (missing.length > 0) {
 }
 
 const PORT = Number(process.env.PORT ?? 3001);
-const RPC_URL = process.env.SOLANA_RPC_HTTP_URL;
+const RPC_URLS = [
+  process.env.SOLANA_RPC_HTTP_URL,
+  process.env.SOLANA_RPC_FALLBACK_URL,
+].filter(Boolean);
 const PROGRAM_ID = process.env.USR_PROGRAM_ID;
 const SUPABASE_URL = process.env.SUPABASE_URL.replace(/\/$/, "");
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -30,6 +33,7 @@ let latestSignature = null;
 let latestSlot = 0;
 let lastError = null;
 let lastPollAt = null;
+let activeRpcIndex = 0;
 
 function eventDiscriminator(name) {
   return createHash("sha256").update(`event:${name}`).digest().subarray(0, 8).toString("hex");
@@ -148,16 +152,26 @@ function decodeEvent(base64) {
 }
 
 async function rpc(method, params = []) {
-  const response = await fetch(RPC_URL, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!response.ok) throw new Error(`RPC ${method} returned HTTP ${response.status}`);
-  const body = await response.json();
-  if (body.error) throw new Error(`RPC ${method}: ${body.error.message}`);
-  return body.result;
+  const failures = [];
+  for (let offset = 0; offset < RPC_URLS.length; offset += 1) {
+    const index = (activeRpcIndex + offset) % RPC_URLS.length;
+    try {
+      const response = await fetch(RPC_URLS[index], {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const body = await response.json();
+      if (body.error) throw new Error(body.error.message);
+      activeRpcIndex = index;
+      return body.result;
+    } catch (error) {
+      failures.push(error instanceof Error ? error.message : "unknown RPC failure");
+    }
+  }
+  throw new Error(`RPC ${method} failed on ${RPC_URLS.length} endpoint(s): ${failures.join("; ")}`);
 }
 
 async function supabase(path, options = {}) {
@@ -346,13 +360,17 @@ const server = createServer(async (request, response) => {
     const url = new URL(request.url ?? "/", "http://localhost");
     if (url.pathname === "/health") {
       const slot = await rpc("getSlot", [{ commitment: "confirmed" }]);
-      return writeJson(response, lastError ? 503 : 200, {
-        ok: !lastError,
+      const lastPollAgeMs = lastPollAt ? Date.now() - Date.parse(lastPollAt) : null;
+      const stale = lastPollAgeMs === null || lastPollAgeMs > POLL_INTERVAL_MS * 4;
+      return writeJson(response, lastError || stale ? 503 : 200, {
+        ok: !lastError && !stale,
         cluster: process.env.SOLANA_CLUSTER ?? "devnet",
         program: PROGRAM_ID,
         rpcSlot: slot,
+        activeRpc: activeRpcIndex === 0 ? "primary" : "fallback",
         indexedSlot: latestSlot,
         lastPollAt,
+        lastPollAgeMs,
         error: lastError,
       });
     }

@@ -5,7 +5,8 @@ import WalletIsland from "./wallet-island";
 
 const PROGRAM_ID = process.env.NEXT_PUBLIC_USR_PROGRAM_ID ?? "";
 const USR_MINT = process.env.NEXT_PUBLIC_USR_MINT ?? "";
-const GRID = Array.from({ length: 25 }, (_, index) => index);
+const USR_CONFIG = process.env.NEXT_PUBLIC_USR_CONFIG_PDA ?? "";
+const USR_REWARD_VAULT = process.env.NEXT_PUBLIC_USR_REWARD_VAULT ?? "";
 
 const stats = [
   ["92M", "fixed max supply"],
@@ -21,56 +22,13 @@ function shortAddress(value: string) {
 }
 
 function ProtocolConsole() {
-  const [selectedSlot, setSelectedSlot] = useState(12);
-  const contractConfigured = Boolean(PROGRAM_ID && USR_MINT);
+  const contractConfigured = Boolean(
+    PROGRAM_ID && USR_MINT && USR_CONFIG && USR_REWARD_VAULT,
+  );
 
   return (
     <div className="protocol-console">
       <WalletIsland variant="panel" contractConfigured={contractConfigured} />
-
-      <div className="console-layout">
-        <div className="reserve-map">
-          <div className="map-heading">
-            <span>Your reserve / 5 × 5</span>
-            <span>Slot {selectedSlot + 1}</span>
-          </div>
-          <div className="reserve-grid" aria-label="Reserve grid">
-            {GRID.map((slot) => (
-              <button
-                key={slot}
-                className={slot === selectedSlot ? "selected" : ""}
-                type="button"
-                aria-label={`Select reserve slot ${slot + 1}`}
-                aria-pressed={slot === selectedSlot}
-                onClick={() => setSelectedSlot(slot)}
-              >
-                {slot === selectedSlot ? "☢" : String(slot + 1).padStart(2, "0")}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="console-controls">
-          <div className="control-card">
-            <small>Selected cell</small>
-            <strong>Uranium Rig #{selectedSlot + 1}</strong>
-            <p>Burn USR to add permanent mining power to this wallet-owned on-chain cell.</p>
-            <label>
-              Build amount
-              <span><input value="1,000" readOnly aria-label="Build amount" /> USR</span>
-            </label>
-            <button type="button" disabled>On-chain actions activate at launch</button>
-          </div>
-          <div className="action-row">
-            <button type="button" disabled><small>Net to wallet</small>Claim rewards</button>
-            <button type="button" disabled><small>Burn + add power</small>Compound</button>
-          </div>
-        </div>
-      </div>
-
-      <div className="transaction-note">
-        Transactions require a connected wallet and launch activation. This site never stores private keys or seed phrases.
-      </div>
     </div>
   );
 }

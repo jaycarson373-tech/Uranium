@@ -235,10 +235,11 @@ begin
       updated_at = now()
     where wallet = p_wallet;
 
-    update public.rigs set
-      level = least(100, level + power_value::smallint),
-      updated_at = now()
-    where wallet = p_wallet and cell = p_cell;
+    insert into public.rigs (wallet, cell, level, updated_at)
+    values (p_wallet, p_cell, least(100, power_value::smallint), now())
+    on conflict (wallet, cell) do update set
+      level = least(100, rigs.level + power_value::smallint),
+      updated_at = now();
 
     insert into public.protocol_state (
       id, rewards_claimed, total_burned, last_slot, updated_at

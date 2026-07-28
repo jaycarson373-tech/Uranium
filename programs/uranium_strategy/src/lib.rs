@@ -5,14 +5,13 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token,
     token_interface::{
-        self, spl_token_2022::instruction::AuthorityType, BurnChecked, Mint, MintTo,
+        self, spl_token_2022::instruction::AuthorityType, Burn, Mint, MintTo,
         SetAuthority, TokenAccount, TokenInterface, TransferChecked,
     },
 };
 
-// Deterministic local-simulation address. Replace with the wallet-controlled
-// Solana Playground program address before any devnet deployment.
-declare_id!("33FayKPVmoNGUxbT8o2tbandYRegiuaj2xP1Xky6ZwRa");
+// Wallet-controlled Solana Playground program address used for Devnet.
+declare_id!("4ZssVwZYsfPAdoWozYyxPHFYts5uohJBHWCQo6yEm5AC");
 
 const CONFIG_SEED: &[u8] = b"config";
 const MINT_SEED: &[u8] = b"usr-mint";
@@ -270,17 +269,16 @@ pub mod uranium_strategy {
         update_pool(&mut ctx.accounts.config, Clock::get()?.unix_timestamp)?;
         settle_miner(&ctx.accounts.config, &mut ctx.accounts.miner)?;
 
-        token_interface::burn_checked(
+        token_interface::burn(
             CpiContext::new(
                 ctx.accounts.token_program.key(),
-                BurnChecked {
+                Burn {
                     mint: ctx.accounts.mint.to_account_info(),
                     from: ctx.accounts.owner_tokens.to_account_info(),
                     authority: ctx.accounts.owner.to_account_info(),
                 },
             ),
             burn_amount,
-            ctx.accounts.mint.decimals,
         )?;
 
         ctx.accounts.miner.rig_levels[slot as usize] = next_level;
@@ -388,10 +386,10 @@ pub mod uranium_strategy {
         }
 
         if fee > 0 {
-            token_interface::burn_checked(
+            token_interface::burn(
                 CpiContext::new_with_signer(
                     ctx.accounts.token_program.key(),
-                    BurnChecked {
+                    Burn {
                         mint: ctx.accounts.mint.to_account_info(),
                         from: ctx.accounts.reward_vault.to_account_info(),
                         authority: ctx.accounts.config.to_account_info(),
@@ -399,7 +397,6 @@ pub mod uranium_strategy {
                     signer_seeds,
                 ),
                 fee,
-                ctx.accounts.mint.decimals,
             )?;
         }
 
@@ -478,10 +475,10 @@ pub mod uranium_strategy {
         let bump_seed = [ctx.accounts.config.bump];
         let signer_seed_slice: &[&[u8]] = &[CONFIG_SEED, authority.as_ref(), &bump_seed];
         let signer_seeds = &[signer_seed_slice];
-        token_interface::burn_checked(
+        token_interface::burn(
             CpiContext::new_with_signer(
                 ctx.accounts.token_program.key(),
-                BurnChecked {
+                Burn {
                     mint: ctx.accounts.mint.to_account_info(),
                     from: ctx.accounts.reward_vault.to_account_info(),
                     authority: ctx.accounts.config.to_account_info(),
@@ -489,7 +486,6 @@ pub mod uranium_strategy {
                 signer_seeds,
             ),
             gross_consumed,
-            ctx.accounts.mint.decimals,
         )?;
 
         emit!(RewardsCompounded {
@@ -625,6 +621,7 @@ pub struct BuildRig<'info> {
     pub config: Account<'info, ProtocolConfig>,
     #[account(mut, seeds = [MINER_SEED, config.key().as_ref(), owner.key().as_ref()], bump = miner.bump, has_one = owner)]
     pub miner: Account<'info, Miner>,
+    #[account(mut)]
     pub mint: InterfaceAccount<'info, Mint>,
     #[account(mut, token::mint = mint, token::authority = owner, token::token_program = token_program)]
     pub owner_tokens: InterfaceAccount<'info, TokenAccount>,
@@ -639,6 +636,7 @@ pub struct ClaimRewards<'info> {
     pub config: Account<'info, ProtocolConfig>,
     #[account(mut, seeds = [MINER_SEED, config.key().as_ref(), owner.key().as_ref()], bump = miner.bump, has_one = owner)]
     pub miner: Account<'info, Miner>,
+    #[account(mut)]
     pub mint: InterfaceAccount<'info, Mint>,
     #[account(mut, address = config.reward_vault)]
     pub reward_vault: InterfaceAccount<'info, TokenAccount>,
@@ -655,6 +653,7 @@ pub struct CompoundRewards<'info> {
     pub config: Account<'info, ProtocolConfig>,
     #[account(mut, seeds = [MINER_SEED, config.key().as_ref(), owner.key().as_ref()], bump = miner.bump, has_one = owner)]
     pub miner: Account<'info, Miner>,
+    #[account(mut)]
     pub mint: InterfaceAccount<'info, Mint>,
     #[account(mut, address = config.reward_vault)]
     pub reward_vault: InterfaceAccount<'info, TokenAccount>,

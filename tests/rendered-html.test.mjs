@@ -35,9 +35,11 @@ test("server-renders the Uranium Strategy beta app", async () => {
   assert.match(html, /Program unavailable/);
 });
 
-test("keeps transactions gated while supporting a cluster cutover", async () => {
-  const [page, providers, protocol] = await Promise.all([
+test("enables reviewed wallet transactions while supporting a cluster cutover", async () => {
+  const [page, runtime, client, providers, protocol] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/wallet-runtime.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/uranium-client.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/providers.tsx", import.meta.url), "utf8"),
     readFile(new URL("../docs/PROTOCOL.md", import.meta.url), "utf8"),
   ]);
@@ -47,11 +49,16 @@ test("keeps transactions gated while supporting a cluster cutover", async () => 
   assert.match(providers, /https:\/\/api\.devnet\.solana\.com/);
   assert.match(page, /NEXT_PUBLIC_USR_PROGRAM_ID/);
   assert.match(page, /NEXT_PUBLIC_USR_MINT/);
-  assert.match(page, /On-chain actions activate at launch/);
-  assert.match(page, /type="button" disabled>On-chain actions activate at launch/);
+  assert.match(runtime, /Review build transaction/);
+  assert.match(runtime, /Approve in wallet/);
+  assert.match(runtime, /client\.sendTransaction\(instructions\)/);
+  assert.match(client, /createGameplayInstructions/);
+  assert.match(client, /initializeMiner/);
+  assert.match(client, /claimRewards/);
+  assert.doesNotMatch(page, /On-chain actions activate at launch/);
   assert.doesNotMatch(page, /Devnet|devnet|pre-launch/);
   assert.doesNotMatch(page, /Robinhood Chain/);
-  assert.match(protocol, /No deployment or token transaction should occur/);
+  assert.match(protocol, /Only the separate “Approve in wallet” action requests a/);
 });
 
 test("keeps wallet startup isolated from the landing page", async () => {
