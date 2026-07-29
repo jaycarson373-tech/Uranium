@@ -20,10 +20,16 @@ function WalletPlaceholder({
   variant,
   contractConfigured = true,
   unavailable = false,
-}: WalletIslandProps & { unavailable?: boolean }) {
+  onRetry,
+}: WalletIslandProps & { unavailable?: boolean; onRetry?: () => void }) {
   if (variant === "compact") {
     return (
-      <button className="wallet-button compact" type="button" disabled>
+      <button
+        className="wallet-button compact"
+        type="button"
+        disabled={!onRetry}
+        onClick={onRetry}
+      >
         {unavailable ? "Wallet unavailable" : "Connect wallet"}
       </button>
     );
@@ -44,8 +50,13 @@ function WalletPlaceholder({
           </strong>
         </div>
       </div>
-      <button className="panel-wallet-placeholder" type="button" disabled>
-        {unavailable ? "Wallet unavailable" : "Connect wallet"}
+      <button
+        className="panel-wallet-placeholder"
+        type="button"
+        disabled={!onRetry}
+        onClick={onRetry}
+      >
+        {unavailable ? "Retry wallet" : "Connect wallet"}
       </button>
     </>
   );
@@ -67,7 +78,13 @@ class WalletErrorBoundary extends Component<
 
   render() {
     if (this.state.failed) {
-      return <WalletPlaceholder {...this.props} unavailable />;
+      return (
+        <WalletPlaceholder
+          {...this.props}
+          unavailable
+          onRetry={() => this.setState({ failed: false })}
+        />
+      );
     }
 
     return this.props.children;

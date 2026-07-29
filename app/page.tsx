@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  Component,
+  useEffect,
+  useMemo,
+  useState,
+  type ErrorInfo,
+  type ReactNode,
+} from "react";
 import WalletIsland from "./wallet-island";
 
 const PROGRAM_ID = process.env.NEXT_PUBLIC_USR_PROGRAM_ID ?? "";
@@ -33,6 +40,37 @@ function ProtocolConsole() {
   );
 }
 
+class GameErrorBoundary extends Component<
+  { children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("Game panel recovered from an error", error, info);
+  }
+
+  render() {
+    if (this.state.failed) {
+      return (
+        <div className="game-error-fallback" role="alert">
+          <strong>The game panel stopped safely.</strong>
+          <span>Your wallet was not charged and no transaction was sent.</span>
+          <button type="button" onClick={() => this.setState({ failed: false })}>
+            Retry game
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 export default function Home() {
   const [muted, setMuted] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -58,7 +96,7 @@ export default function Home() {
   };
 
   return (
-    <main className="strategy-shell">
+    <main className={`strategy-shell ${panel ? "panel-open" : ""}`}>
       <div className="scene" aria-hidden="true">
         <div className="scene-sky" />
         <div className="radiation-haze" />
@@ -134,7 +172,9 @@ export default function Home() {
             <>
               <div className="panel-kicker">Protocol console / Solana beta</div>
               <h2 id="panel-title">Build your<br /><span>reserve.</span></h2>
-              <ProtocolConsole />
+              <GameErrorBoundary>
+                <ProtocolConsole />
+              </GameErrorBoundary>
             </>
           ) : (
             <>

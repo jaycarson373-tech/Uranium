@@ -74,7 +74,10 @@ test("keeps wallet startup isolated from the landing page", async () => {
   assert.match(page, /<WalletIsland variant="compact"/);
   assert.match(island, /lazy\(\(\) => import\("\.\/wallet-runtime"\)\)/);
   assert.match(island, /WalletErrorBoundary/);
+  assert.match(island, /Retry wallet/);
   assert.match(island, /if \(!mounted\)/);
   assert.match(runtime, /<Providers>/);
   assert.match(runtime, /WalletReadyGate/);
+  assert.match(page, /GameErrorBoundary/);
+  assert.match(page, /Your wallet was not charged and no transaction was sent/);
 });

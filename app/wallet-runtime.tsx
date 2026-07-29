@@ -41,12 +41,20 @@ function WalletControl({ compact = false }: { compact?: boolean }) {
 
   const safelyConnect = (wallet: Parameters<typeof connect>[0]) => {
     setWalletError(false);
-    Promise.resolve(connect(wallet)).catch(() => setWalletError(true));
+    try {
+      connect(wallet);
+    } catch {
+      setWalletError(true);
+    }
   };
 
   const safelyDisconnect = () => {
     setWalletError(false);
-    Promise.resolve(disconnect()).catch(() => setWalletError(true));
+    try {
+      disconnect();
+    } catch {
+      setWalletError(true);
+    }
   };
 
   if (walletError) {
@@ -163,7 +171,9 @@ function GamePanel({ contractConfigured = true }: Pick<WalletIslandProps, "contr
 
   useEffect(() => {
     const initial = window.setTimeout(() => void refresh(), 0);
-    if (!connected) return;
+    if (!connected) {
+      return () => window.clearTimeout(initial);
+    }
     const timer = window.setInterval(() => void refresh(), 15_000);
     return () => {
       window.clearTimeout(initial);
