@@ -30,7 +30,7 @@ test("server-renders the Uranium Strategy beta app", async () => {
 
   const html = await response.text();
   assert.match(html, /<title>Uranium Strategy/);
-  assert.match(html, /Solana · Beta/);
+  assert.match(html, /Solana · .*Devnet/);
   assert.match(html, /Open Protocol Console/);
   assert.match(html, /Program unavailable/);
 });
@@ -56,7 +56,8 @@ test("enables reviewed wallet transactions while supporting a cluster cutover", 
   assert.match(client, /initializeMiner/);
   assert.match(client, /claimRewards/);
   assert.doesNotMatch(page, /On-chain actions activate at launch/);
-  assert.doesNotMatch(page, /Devnet|devnet|pre-launch/);
+  assert.match(page, /During beta, the interface is connected to Devnet/);
+  assert.doesNotMatch(page, /pre-launch/);
   assert.doesNotMatch(page, /Robinhood Chain/);
   assert.match(protocol, /Only the separate “Approve in wallet” action requests a/);
 });
@@ -80,4 +81,28 @@ test("keeps wallet startup isolated from the landing page", async () => {
   assert.match(runtime, /WalletReadyGate/);
   assert.match(page, /GameErrorBoundary/);
   assert.match(page, /Your wallet was not charged and no transaction was sent/);
+});
+
+test("ships the explainer, official-link controls, and guarded live chat", async () => {
+  const [page, chat, chatApi, chatMigration] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/live-chat.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/chat/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/202607300001_live_chat.sql", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(page, /How it works\./);
+  assert.match(page, /copyContractAddress/);
+  assert.match(page, /NEXT_PUBLIC_X_URL/);
+  assert.match(page, /NEXT_PUBLIC_PUMP_FUN_URL/);
+  assert.match(page, /NEXT_PUBLIC_DEXSCREENER_URL/);
+  assert.match(page, /Market links remain disabled until their official URLs are configured/);
+  assert.match(chat, /Live strategy chat\./);
+  assert.match(chat, /fetch\("\/api\/chat"/);
+  assert.doesNotMatch(chat, /dangerouslySetInnerHTML/);
+  assert.match(chatApi, /SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(chatApi, /CHAT_RATE_LIMIT_SALT/);
+  assert.match(chatMigration, /pg_advisory_xact_lock/);
+  assert.match(chatMigration, /chat_rate_limited/);
+  assert.match(chatMigration, /to service_role/);
 });

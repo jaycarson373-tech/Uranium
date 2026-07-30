@@ -8,12 +8,18 @@ import {
   type ErrorInfo,
   type ReactNode,
 } from "react";
+import LiveChat from "./live-chat";
 import WalletIsland from "./wallet-island";
 
 const PROGRAM_ID = process.env.NEXT_PUBLIC_USR_PROGRAM_ID ?? "";
 const USR_MINT = process.env.NEXT_PUBLIC_USR_MINT ?? "";
 const USR_CONFIG = process.env.NEXT_PUBLIC_USR_CONFIG_PDA ?? "";
 const USR_REWARD_VAULT = process.env.NEXT_PUBLIC_USR_REWARD_VAULT ?? "";
+const CLUSTER = process.env.NEXT_PUBLIC_SOLANA_CLUSTER ?? "devnet";
+const X_URL = process.env.NEXT_PUBLIC_X_URL ?? "";
+const PUMP_FUN_URL = process.env.NEXT_PUBLIC_PUMP_FUN_URL ?? "";
+const DEXSCREENER_URL = process.env.NEXT_PUBLIC_DEXSCREENER_URL ?? "";
+const NETWORK_LABEL = CLUSTER === "mainnet-beta" ? "Mainnet" : "Devnet";
 
 const stats = [
   ["92M", "fixed max supply"],
@@ -26,6 +32,18 @@ type Panel = "about" | "console" | null;
 
 function shortAddress(value: string) {
   return `${value.slice(0, 4)}…${value.slice(-4)}`;
+}
+
+function FooterLink({ href, label }: { href: string; label: string }) {
+  if (!href) {
+    return <span className="market-link pending" aria-disabled="true">{label} · pending</span>;
+  }
+
+  return (
+    <a className="market-link" href={href} target="_blank" rel="noreferrer">
+      {label} ↗
+    </a>
+  );
 }
 
 function ProtocolConsole() {
@@ -74,6 +92,7 @@ class GameErrorBoundary extends Component<
 export default function Home() {
   const [muted, setMuted] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedCa, setCopiedCa] = useState(false);
   const [panel, setPanel] = useState<Panel>(null);
   const reserveLabel = useMemo(
     () => PROGRAM_ID ? shortAddress(PROGRAM_ID) : "Program unavailable",
@@ -90,13 +109,29 @@ export default function Home() {
 
   const copyProgramId = async () => {
     if (!PROGRAM_ID) return;
-    await navigator.clipboard.writeText(PROGRAM_ID);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1800);
+    try {
+      await navigator.clipboard.writeText(PROGRAM_ID);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  const copyContractAddress = async () => {
+    if (!USR_MINT) return;
+    try {
+      await navigator.clipboard.writeText(USR_MINT);
+      setCopiedCa(true);
+      window.setTimeout(() => setCopiedCa(false), 1800);
+    } catch {
+      setCopiedCa(false);
+    }
   };
 
   return (
-    <main className={`strategy-shell ${panel ? "panel-open" : ""}`}>
+    <>
+      <main className={`strategy-shell ${panel ? "panel-open" : ""}`}>
       <div className="scene" aria-hidden="true">
         <div className="scene-sky" />
         <div className="radiation-haze" />
@@ -130,8 +165,24 @@ export default function Home() {
           <button className="icon-button" type="button" aria-label={muted ? "Enable sound effects" : "Mute sound effects"} aria-pressed={muted} onClick={() => setMuted((value) => !value)}>
             <span aria-hidden="true">{muted ? "×" : "♪"}</span>
           </button>
-          <span className="live-badge"><i /> Solana · Beta</span>
+          <span className="live-badge"><i /> Solana · {NETWORK_LABEL}</span>
+          <a className="about-button how-link" href="#how-it-works">How it works</a>
           <button className="about-button" type="button" onClick={() => setPanel("about")}>Protocol</button>
+          {X_URL ? (
+            <a className="top-link" href={X_URL} target="_blank" rel="noreferrer" aria-label="Uranium Strategy on X">X</a>
+          ) : (
+            <span className="top-link pending" title="Official X link pending">X</span>
+          )}
+          <button
+            className="ca-button"
+            type="button"
+            disabled={!USR_MINT}
+            onClick={copyContractAddress}
+            aria-label={`Copy ${NETWORK_LABEL} USR contract address`}
+          >
+            <span>{copiedCa ? "Copied" : `${NETWORK_LABEL} CA`}</span>
+            <strong>{USR_MINT ? shortAddress(USR_MINT) : "Pending"}</strong>
+          </button>
           <WalletIsland variant="compact" />
         </nav>
       </header>
@@ -170,7 +221,7 @@ export default function Home() {
           <button className="close-button" type="button" onClick={() => setPanel(null)} aria-label="Close panel">×</button>
           {panel === "console" ? (
             <>
-              <div className="panel-kicker">Protocol console / Solana beta</div>
+              <div className="panel-kicker">Protocol console / Solana {NETWORK_LABEL.toLowerCase()}</div>
               <h2 id="panel-title">Build your<br /><span>reserve.</span></h2>
               <GameErrorBoundary>
                 <ProtocolConsole />
@@ -205,7 +256,54 @@ export default function Home() {
             </>
           )}
         </section>
-      </div>
-    </main>
+        </div>
+      </main>
+
+      <section className="how-section" id="how-it-works" aria-labelledby="how-title">
+        <div className="section-heading">
+          <span>Protocol loop / four moves</span>
+          <h2 id="how-title">How it works.</h2>
+          <p>Every balance, rig level and reward calculation settles through the Uranium Strategy program—not a private game server.</p>
+        </div>
+        <div className="how-grid">
+          <article>
+            <b>01</b>
+            <small>Enter</small>
+            <h3>Connect on Solana</h3>
+            <p>Connect a Wallet Standard wallet. During beta, the interface is connected to Devnet and beta USR has no market value.</p>
+          </article>
+          <article>
+            <b>02</b>
+            <small>Build</small>
+            <h3>Burn USR for rigs</h3>
+            <p>Choose one of 25 cells and burn USR in 1,000-token increments. Each increment adds one permanent level and one unit of mining power.</p>
+          </article>
+          <article>
+            <b>03</b>
+            <small>Mine</small>
+            <h3>Earn from a finite vault</h3>
+            <p>Your share of the 64.4M USR reward reserve accrues by mining power. Base emissions halve every seven days and no new tokens can be minted.</p>
+          </article>
+          <article>
+            <b>04</b>
+            <small>Choose</small>
+            <h3>Claim or compound</h3>
+            <p>Claim rewards to your wallet with a 2% burn, or compound them into more power with a 0.75% burn. Your wallet approves every transaction.</p>
+          </article>
+        </div>
+      </section>
+
+      <LiveChat />
+
+      <footer className="market-footer">
+        <span>Uranium Strategy · Solana {NETWORK_LABEL}</span>
+        <nav aria-label="Official market and social links">
+          <FooterLink href={PUMP_FUN_URL} label="Pump.fun" />
+          <FooterLink href={X_URL} label="X.com" />
+          <FooterLink href={DEXSCREENER_URL} label="Dexscreener" />
+        </nav>
+        <small>Verify the contract address shown above. Market links remain disabled until their official URLs are configured.</small>
+      </footer>
+    </>
   );
 }
